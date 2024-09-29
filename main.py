@@ -3,7 +3,13 @@ import DearPyGui_DragAndDrop as dpg_dnd
 
 dpg.create_context()
 dpg_dnd.initialize()
-dpg.create_viewport(title="Drag and drop example", width=600, height=600)
+dpg.create_viewport(
+    title="Drag and drop example",
+    width=600,
+    height=600,
+    small_icon=r'textures\player.ico',
+    large_icon=r'textures\player.ico'
+)
 
 
 dpg.setup_dearpygui()
@@ -12,6 +18,7 @@ dpg.show_viewport()
 
 class Player:
     def __init__(self):
+        self.playlist = []
 
         with dpg.window(no_scrollbar=True, no_scroll_with_mouse=True) as self.main_window:
             with dpg.child_window() as self.data_window:
