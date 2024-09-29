@@ -1,5 +1,14 @@
 import dearpygui.dearpygui as dpg
 import DearPyGui_DragAndDrop as dpg_dnd
+import time
+from pygame import mixer
+import music_tag
+import os
+from pydub import AudioSegment
+from PIL import Image, ImageEnhance
+import io
+import numpy as np
+
 
 dpg.create_context()
 dpg_dnd.initialize()
@@ -30,13 +39,47 @@ class Player:
         dpg.set_primary_window(self.main_window, True)
 
         with dpg.viewport_menu_bar() as self.bar:
-            ...
+            dpg.add_button(label='aaa', callback=lambda: print(11))
 
         dpg_dnd.set_drop(self.drop)
 
     def drop(self, data, keys):
         print(f'{data}')
         print(f'{keys}')
+
+        mixer.init()
+        mixer.music.load(data[0])
+        mixer.music.play()
+        mixer.music.set_volume(0.5)
+        f = music_tag.load_file(data[0])
+        artwork = f['artwork']
+        print(artwork.first.mime)
+        print(artwork.first.height)
+        artwork_data = artwork.first.data
+        im = io.BytesIO(artwork_data)
+        imageFile = Image.open(im)
+
+        image_mask = Image.open(r'textures/mask.png')
+        image_mask = image_mask.resize((artwork.first.width, artwork.first.height))
+        imageFile.paste(im=imageFile, box=(0, 0), mask=image_mask)
+
+        layer = Image.new("RGBA", imageFile.size, 0)
+        mask_layer = Image.new("L", imageFile.size, 0)
+        mask_layer.paste(image_mask)
+
+        layer.paste(imageFile, None, mask_layer)
+
+        image_data = np.array(layer.convert("RGBA")).flatten() / 255
+
+        with dpg.texture_registry():
+            print(1)
+            texture_id = dpg.add_static_texture(artwork.first.width, artwork.first.height, image_data)
+            print(1)
+            with dpg.window():
+                dpg.add_image(texture_id)
+        """while mixer.music.get_busy():  # wait for music to finish playing
+
+            time.sleep(1)"""
 
     @staticmethod
     def __set_pos_scale(pos: tuple[int, int], scale: tuple[int, int], window):
