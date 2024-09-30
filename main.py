@@ -29,7 +29,10 @@ dpg.show_viewport()
 
 class Player:
     def __init__(self):
+        self.mixer = mixer
+        self.vinyl_image: dpg.add_image = None
         self.playlist: list[Track] = []
+        self.id = 0
 
         self.texture_reg = dpg.add_texture_registry()
         self.background = Image.open(r'textures/vinil.png')
@@ -40,6 +43,8 @@ class Player:
             with dpg.child_window() as self.artwork_window:
                 ...
             with dpg.child_window() as self.timeline_window:
+                self.button_next = dpg.add_button(arrow=True, direction=1, callback=self.next)
+            with dpg.child_window() as self.playlist_window:
                 ...
         dpg.set_primary_window(self.main_window, True)
 
@@ -49,23 +54,42 @@ class Player:
         dpg_dnd.set_drop(self.drop)
 
     def drop(self, data, keys):
-        print(f'{data}')
-        print(f'{keys}')
-
         for path in data:
             if os.path.isfile(path) and path.split('.')[-1] == 'mp3':
                 self.playlist.append(Track(path=path, texture_reg=self.texture_reg, background=self.background))
+                self.draw_playlist()
 
-        iamge = dpg.add_image(self.playlist[-1].texture_id, parent=self.artwork_window)
+        self.id = len(self.playlist) - 1
 
-        """
-        mixer.init()
-        mixer.music.load(data[0])
-        mixer.music.play()
-        mixer.music.set_volume(0)
-        while mixer.music.get_busy():  # wait for music to finish playing
+        self.draw_playlist()
+        self.play()
+
+    def play(self):
+        dpg.delete_item(self.artwork_window, children_only=True)
+        self.vinyl_image = dpg.add_image(self.playlist[self.id].texture_id, parent=self.artwork_window)
+
+        self.mixer.init()
+        self.mixer.music.load(self.playlist[self.id].path)
+        self.mixer.music.play()
+        self.mixer.music.set_volume(0.5)
+        """while mixer.music.get_busy():  # wait for music to finish playing
 
             time.sleep(1)"""
+
+    def next(self):
+        self.id += 1
+        if self.id == len(self.playlist):
+            self.id = 0
+
+        self.play()
+
+    def draw_playlist(self):
+        dpg.delete_item(self.playlist_window, children_only=True)
+
+        for sound in self.playlist:
+            selectbl = dpg.add_selectable(label=sound.title, parent=self.playlist_window)
+            with dpg.tooltip(selectbl):
+                dpg.add_text(sound.author)
 
     @staticmethod
     def __set_pos_scale(pos: tuple[int, int], scale: tuple[int, int], window):
@@ -104,6 +128,14 @@ class Player:
             (global_width-266, 50),
             self.timeline_window
         )
+
+        self.__set_pos_scale(
+            (258, 10),
+            (global_width-266, global_height - 58),
+            self.playlist_window
+        )
+
+        dpg.set_item_pos(self.button_next, [dpg.get_item_width(self.timeline_window) - 25, 20])
 
 
 player = Player()
