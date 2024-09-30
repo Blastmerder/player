@@ -9,6 +9,8 @@ from PIL import Image, ImageEnhance
 import io
 import numpy as np
 
+from Moduls.track import Track
+
 
 dpg.create_context()
 dpg_dnd.initialize()
@@ -27,7 +29,10 @@ dpg.show_viewport()
 
 class Player:
     def __init__(self):
-        self.playlist = []
+        self.playlist: list[Track] = []
+
+        self.texture_reg = dpg.add_texture_registry()
+        self.background = Image.open(r'textures/vinil.png')
 
         with dpg.window(no_scrollbar=True, no_scroll_with_mouse=True) as self.main_window:
             with dpg.child_window() as self.data_window:
@@ -47,37 +52,18 @@ class Player:
         print(f'{data}')
         print(f'{keys}')
 
+        for path in data:
+            if os.path.isfile(path) and path.split('.')[-1] == 'mp3':
+                self.playlist.append(Track(path=path, texture_reg=self.texture_reg, background=self.background))
+
+        iamge = dpg.add_image(self.playlist[-1].texture_id, parent=self.artwork_window)
+
+        """
         mixer.init()
         mixer.music.load(data[0])
         mixer.music.play()
-        mixer.music.set_volume(0.5)
-        f = music_tag.load_file(data[0])
-        artwork = f['artwork']
-        print(artwork.first.mime)
-        print(artwork.first.height)
-        artwork_data = artwork.first.data
-        im = io.BytesIO(artwork_data)
-        imageFile = Image.open(im)
-
-        image_mask = Image.open(r'textures/mask.png')
-        image_mask = image_mask.resize((artwork.first.width, artwork.first.height))
-        imageFile.paste(im=imageFile, box=(0, 0), mask=image_mask)
-
-        layer = Image.new("RGBA", imageFile.size, 0)
-        mask_layer = Image.new("L", imageFile.size, 0)
-        mask_layer.paste(image_mask)
-
-        layer.paste(imageFile, None, mask_layer)
-
-        image_data = np.array(layer.convert("RGBA")).flatten() / 255
-
-        with dpg.texture_registry():
-            print(1)
-            texture_id = dpg.add_static_texture(artwork.first.width, artwork.first.height, image_data)
-            print(1)
-            with dpg.window():
-                dpg.add_image(texture_id)
-        """while mixer.music.get_busy():  # wait for music to finish playing
+        mixer.music.set_volume(0)
+        while mixer.music.get_busy():  # wait for music to finish playing
 
             time.sleep(1)"""
 
